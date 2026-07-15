@@ -6,7 +6,7 @@
  Description: 
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>, 
+   Copyright (c) 2007-2018 Daniel Adler <dadler@uni-goettingen.de>, 
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -24,15 +24,14 @@
 */
 
 
+
 #include "dynload.h"
-#include "../autovar/autovar_ABI.h"
-#if defined(ABI_PE)
+#include "../dyncall/dyncall_macros.h"
+#if defined(DC__Obj_PE)
 #include "dynload_syms_pe.c"
-#elif defined(ABI_Mach)
+#elif defined(DC__Obj_Mach)
 #include "dynload_syms_mach-o.c"
-#elif defined(ABI_ELF)
+#elif defined(DC__Obj_ELF)
 #include "dynload_syms_elf.c"
-#else
-void dummy() { }
 #endif
 

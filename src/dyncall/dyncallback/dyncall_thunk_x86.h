@@ -6,7 +6,7 @@
  Description: Thunk - Header for x86
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>,
+   Copyright (c) 2007-2018 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -23,6 +23,7 @@
 
 */
 
+
 #ifndef DYNCALL_THUNK_X86_H
 #define DYNCALL_THUNK_X86_H
 
@@ -34,6 +35,6 @@ struct DCThunk_
   void        (*addr_entry)();
 };
 
-#define DCTHUNK_X86_SIZE	16
+#define DCTHUNK_X86_SIZE 16
 
 #endif /* DYNCALL_THUNK_X86_H */

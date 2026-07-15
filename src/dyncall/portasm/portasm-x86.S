@@ -6,7 +6,7 @@
  Description: Portable Assembler Macros for x86
  License:
 
-   Copyright (c) 2011 Daniel Adler <dadler@uni-goettingen.de>
+   Copyright (c) 2011-2018 Daniel Adler <dadler@uni-goettingen.de>
 
    Permission to use, copy, modify, and distribute this software for any
    purpose with or without fee is hereby granted, provided that the above
@@ -21,6 +21,7 @@
    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 */
+
 
 
 /* Common macros. */
@@ -61,13 +62,15 @@
 #  define FLDS(OP) fld OP
 #  define FLDL(OP) fld OP
 #  define LOCAL(NAME) NAME
+/* @@@ check if masm support wanted/needed */
+#  define SECTION_NOTE_NXSTACK
 #else
 /* GNU/SunPro Assembler AT&T Syntax */
 	.text
 #  define BEGIN_ASM
 #  define END_ASM 
-#  include "../autovar/autovar_OS.h"
-#  if defined(OS_Win32) || defined(OS_Cygwin) || defined(OS_MinGW) || defined(OS_Darwin) || defined(OS_Minix)
+#  include "../dyncall/dyncall_macros.h"
+#  if defined(DC__OS_Win32) || defined(DC__OS_Cygwin) || defined(DC__OS_MinGW) || defined(DC__OS_Darwin) || defined(DC__OS_Minix)
 #    define CSYM(X) _##X
 #  else
 #    define CSYM(X) X
@@ -107,8 +110,7 @@
 #  define MOVSD movsd
 #  define DWORD(R,OFF) OFF(R)
 #  define QWORD(R,OFF) OFF(R)
-#  include "../autovar/autovar_CC.h"
-#  if defined CC_SUN
+#  if defined DC__C_SUNPRO
 #    define LIT(X) $X
 #  else
 #    define LIT(X) XCONCAT($,X)

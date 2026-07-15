@@ -6,7 +6,7 @@
  Description: Auto-include delegate to windows/posix-based dynamic linker.
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>, 
+   Copyright (c) 2007-2018 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -24,15 +24,10 @@
 */
 
 
-#include "../autovar/autovar_OSFAMILY.h"
-#if defined(OSFAMILY_Windows)
+#include "../dyncall/dyncall_macros.h"
+#if defined(DC_WINDOWS)
 #  include "dynload_windows.c"
-#elif defined(OSFAMILY_Unix)
-#  include "../autovar/autovar_OS.h"
-#  if defined(OS_Darwin)
-#    include "dynload_darwin.c"
-#  else
-#    include "dynload_unix.c"
-#  endif
+#elif defined(DC_UNIX)
+#  include "dynload_unix.c"
 #endif
 

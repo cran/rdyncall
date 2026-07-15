@@ -12,35 +12,48 @@
  */
 
 /* rdyncall.c */
-SEXP r_new_callvm(SEXP callmode, SEXP size);
-SEXP r_free_callvm(SEXP callvm);
-SEXP r_dyncall(SEXP args); /* .External() with args = callvm, address, signature, args */
+SEXP C_callvm_new(SEXP callmode, SEXP size);
+SEXP C_callvm_free(SEXP callvm);
+SEXP C_dyncall(SEXP args); /* .External() with args = callvm, address, signature, aggregate layouts, args */
+SEXP C_dynpath(SEXP libh);
+SEXP C_dyncount(SEXP libh);
+SEXP C_dynlist(SEXP libh);
 
 /* rdynload.c */
-SEXP r_dynload(SEXP libpath);
-SEXP r_dynsym(SEXP libobj, SEXP symname, SEXP protectlib);
-SEXP r_dynunload(SEXP libobj);
+SEXP C_dynload(SEXP libpath);
+SEXP C_dynsym(SEXP libobj, SEXP symname, SEXP protectlib);
+SEXP C_dynunload(SEXP libobj);
+SEXP C_is_dynload_handle(SEXP libobj);
 
 /* rpack.c */
-SEXP r_pack(SEXP ptr, SEXP offset, SEXP sig, SEXP value);
-SEXP r_unpack(SEXP ptr, SEXP offset, SEXP sig);
+SEXP C_pack(SEXP ptr, SEXP offset, SEXP sig, SEXP value);
+SEXP C_unpack(SEXP ptr, SEXP offset, SEXP sig);
+SEXP C_pack_bitfield(SEXP ptr, SEXP bit_offset, SEXP bit_width, SEXP sig, SEXP value);
+SEXP C_unpack_bitfield(SEXP ptr, SEXP bit_offset, SEXP bit_width, SEXP sig);
+
+/* rsignature.c */
+SEXP C_scan_signature_tokens(SEXP signature);
+SEXP C_scan_field_tail(SEXP tail);
 
 /* rcallback.c */
-SEXP r_new_callback(SEXP sig, SEXP fun, SEXP rho, SEXP mode);
+SEXP C_callback(SEXP sig, SEXP aggr_layouts, SEXP aggr_typeinfos, SEXP fun, SEXP rho, SEXP state);
+SEXP C_callback_status(SEXP callback);
+SEXP C_callback_is_active(SEXP callback);
+SEXP C_callback_last_error(SEXP callback);
 
 /* rutils.c */
-SEXP r_asextptr(SEXP v);
-SEXP r_isnullptr(SEXP x);
-SEXP r_offsetPtr(SEXP x, SEXP offset);
+SEXP C_asexternalptr(SEXP v);
+SEXP C_isnullptr(SEXP x);
+SEXP C_offsetptr(SEXP x, SEXP offset);
 
 /* rutils_str.c */
-SEXP r_ptr2str(SEXP ptr);
-SEXP r_strarrayptr(SEXP ptr);
-SEXP r_strptr(SEXP x);
+SEXP C_ptr2str(SEXP ptr);
+SEXP C_strarrayptr(SEXP ptr);
+SEXP C_strptr(SEXP x);
 
 /* rutils_float.c */
-SEXP r_as_floatraw(SEXP real);
-SEXP r_floatraw2numeric(SEXP floatraw);
+SEXP C_as_floatraw(SEXP real);
+SEXP C_floatraw2numeric(SEXP floatraw);
 
 /** ---------------------------------------------------------------------------
  ** R Interface .External registry
@@ -49,7 +62,7 @@ SEXP r_floatraw2numeric(SEXP floatraw);
 R_ExternalMethodDef externalMethods[] =
 {
   /* --- rdyncall.c -------------------------------------------------------- */
-  {"dyncall",     (DL_FUNC) &r_dyncall,      -1},
+  {"C_dyncall",     (DL_FUNC) &C_dyncall,      -1},
   /* --- end (sentinel) ---------------------------------------------------- */
   {NULL,NULL,0}
 };
@@ -61,28 +74,40 @@ R_ExternalMethodDef externalMethods[] =
 R_CallMethodDef callMethods[] =
 {
   /* --- rdyncall.c -------------------------------------------------------- */
-  {"new_callvm"                 , (DL_FUNC) &r_new_callvm       , 2},
-  {"free_callvm"                , (DL_FUNC) &r_free_callvm      , 1},
+  {"C_callvm_new"               , (DL_FUNC) &C_callvm_new       , 2},
+  {"C_callvm_free"              , (DL_FUNC) &C_callvm_free      , 1},
   /* --- rdynload.c -------------------------------------------------------- */
-  {"dynload"                    , (DL_FUNC) &r_dynload          , 1},
-  {"dynsym"                     , (DL_FUNC) &r_dynsym           , 3},
-  {"dynunload"                  , (DL_FUNC) &r_dynunload        , 1},
+  {"C_dynload"                  , (DL_FUNC) &C_dynload          , 1},
+  {"C_dynsym"                   , (DL_FUNC) &C_dynsym           , 3},
+  {"C_dynunload"                , (DL_FUNC) &C_dynunload        , 1},
+  {"C_is_dynload_handle"        , (DL_FUNC) &C_is_dynload_handle, 1},
+  {"C_dynpath"                  , (DL_FUNC) &C_dynpath          , 1},
+  {"C_dyncount"                 , (DL_FUNC) &C_dyncount         , 1},
+  {"C_dynlist"                  , (DL_FUNC) &C_dynlist          , 1},
   /* --- rcallback.c ------------------------------------------------------- */
-  {"new_callback"               , (DL_FUNC) &r_new_callback     , 3},
+  {"C_callback"                 , (DL_FUNC) &C_callback         , 6},
+  {"C_callback_status"          , (DL_FUNC) &C_callback_status  , 1},
+  {"C_callback_is_active"       , (DL_FUNC) &C_callback_is_active, 1},
+  {"C_callback_last_error"      , (DL_FUNC) &C_callback_last_error, 1},
   /* --- rpack.c ----------------------------------------------------------- */
-  {"pack"                       , (DL_FUNC) &r_pack             , 4},
-  {"unpack"                     , (DL_FUNC) &r_unpack           , 3},
+  {"C_pack"                     , (DL_FUNC) &C_pack             , 4},
+  {"C_unpack"                   , (DL_FUNC) &C_unpack           , 3},
+  {"C_pack_bitfield"            , (DL_FUNC) &C_pack_bitfield    , 5},
+  {"C_unpack_bitfield"          , (DL_FUNC) &C_unpack_bitfield  , 4},
+  /* --- rsignature.c ------------------------------------------------------ */
+  {"C_scan_signature_tokens"     , (DL_FUNC) &C_scan_signature_tokens, 1},
+  {"C_scan_field_tail"           , (DL_FUNC) &C_scan_field_tail  , 1},
   /* --- rutils.c ---------------------------------------------------------- */
-  {"asextptr"                   , (DL_FUNC) &r_asextptr         , 1},
-  {"isnullptr"                  , (DL_FUNC) &r_isnullptr        , 1},
-  {"offsetPtr"                  , (DL_FUNC) &r_offsetPtr        , 2},
+  {"C_asexternalptr"            , (DL_FUNC) &C_asexternalptr    , 1},
+  {"C_isnullptr"                , (DL_FUNC) &C_isnullptr        , 1},
+  {"C_offsetptr"                , (DL_FUNC) &C_offsetptr        , 2},
   /* --- rutils_str.c ------------------------------------------------------ */
-  {"r_ptr2str"                  , (DL_FUNC) &r_ptr2str          , 1},
-  {"r_strarrayptr"              , (DL_FUNC) &r_strarrayptr      , 1},
-  {"r_strptr"                   , (DL_FUNC) &r_strptr           , 1},
+  {"C_ptr2str"                  , (DL_FUNC) &C_ptr2str          , 1},
+  {"C_strarrayptr"              , (DL_FUNC) &C_strarrayptr      , 1},
+  {"C_strptr"                   , (DL_FUNC) &C_strptr           , 1},
   /* --- rutils_float.c ---------------------------------------------------- */
-  {"r_as_floatraw"              , (DL_FUNC) &r_as_floatraw      , 1},
-  {"r_floatraw2numeric"         , (DL_FUNC) &r_floatraw2numeric , 1},
+  {"C_as_floatraw"              , (DL_FUNC) &C_as_floatraw      , 1},
+  {"C_floatraw2numeric"         , (DL_FUNC) &C_floatraw2numeric , 1},
   /* --- end (sentinel) ---------------------------------------------------- */
   {NULL,NULL, 0}
 };
@@ -94,6 +119,7 @@ R_CallMethodDef callMethods[] =
 void R_init_rdyncall(DllInfo *info)
 {
   R_registerRoutines(info, NULL, callMethods, NULL, externalMethods);
+  R_useDynamicSymbols(info, FALSE);
 }
 
 void R_unload_rdyncall(DllInfo *info)

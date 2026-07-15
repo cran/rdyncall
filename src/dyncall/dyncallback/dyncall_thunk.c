@@ -6,7 +6,7 @@
  Description: Thunk - Implementation Back-end selection
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>,
+   Copyright (c) 2007-2018 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -31,15 +31,27 @@
 # include "dyncall_thunk_x86.c"
 #elif defined(DC__Arch_AMD64)
 # include "dyncall_thunk_x64.c"
-#elif defined(DC__Arch_PowerPC)
-# include "dyncall_thunk_ppc32.c"
-#elif defined(DC__Arch_ARM_ARM)
-#include "dyncall_thunk_arm32_arm.c"
-#elif defined(DC__Arch_ARM_THUMB)
-#include "dyncall_thunk_arm32_thumb.c"
+#elif defined(DC__Arch_PPC32)
+# if defined(DC__OS_Darwin)
+#   include "dyncall_thunk_ppc32.c"
+# else
+#   include "dyncall_thunk_ppc32_sysv.c"
+# endif
+#elif defined(DC__Arch_PPC64)
+# include "dyncall_thunk_ppc64.c"
+#elif defined(DC__Arch_ARM)
+#include "dyncall_thunk_arm32.c"
+#elif defined(DC__Arch_MIPS)
+#include "dyncall_thunk_mips.c"
+#elif defined(DC__Arch_MIPS64)
+#include "dyncall_thunk_mips64.c"
 #elif defined(DC__Arch_Sparc)
 #include "dyncall_thunk_sparc32.c"
-#elif defined(DC__Arch_Sparcv9)
+#elif defined(DC__Arch_Sparc64)
 #include "dyncall_thunk_sparc64.c"
+#elif defined(DC__Arch_ARM64)
+#include "dyncall_thunk_arm64.c"
+#elif defined(DC__Arch_RiscV64)
+#include "dyncall_thunk_riscv64.c"
 #endif
 

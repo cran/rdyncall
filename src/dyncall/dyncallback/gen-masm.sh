@@ -1,3 +1,6 @@
-gcc -E -P -DGEN_MASM dyncall_callback_arch_x86.S | unix2dos >dyncall_callback_arch_x86_masm.asm
-gcc -E -P -DGEN_MASM dyncall_callback_arch_x64.S | unix2dos >dyncall_callback_arch_x64_masm.asm
+#!/bin/sh
+cd `dirname $0`
+
+../portasm/gen-masm.sh dyncall_callback_x86 _masm
+../portasm/gen-masm.sh dyncall_callback_x64 _masm
 

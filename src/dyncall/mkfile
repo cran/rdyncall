@@ -1,7 +1,7 @@
 #//////////////////////////////////////////////////////////////////////////////
 #
-# Copyright (c) 2010 Daniel Adler <dadler@uni-goettingen.de>, 
-#                    Tassilo Philipp <tphilipp@potion-studios.com>
+# Copyright (c) 2010      Daniel Adler <dadler@uni-goettingen.de>, 
+#               2010,2022 Tassilo Philipp <tphilipp@potion-studios.com>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -23,14 +23,14 @@ TOP = .
 <$TOP/buildsys/mk/prolog.mk
 
 # directories:
-DIRS  = dyncall
-AUTOS = ConfigVars
+DIRS  = dyncall dyncallback
+AUTOS = Makefile.config
 
-#.PHONY: test doc
-test:V:
-	cd $target; $MK
+#.PHONY: tests doc
+tests:V:
+	cd test; $MK
 doc:V:
-	cd $target; $MK
+	cd $target/manual; $MK
 
 <$TOP/buildsys/mk/epilog.mk
 

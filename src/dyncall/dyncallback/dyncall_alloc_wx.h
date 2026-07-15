@@ -6,7 +6,7 @@
  Description: Allocate write/executable memory - Interface
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>,
+   Copyright (c) 2007-2021 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -23,10 +23,11 @@
 
 */
 
+
 #ifndef DYNCALL_ALLOC_WX_HPP
 #define DYNCALL_ALLOC_WX_HPP
 
-#include "../dyncall/dyncall_types.h"
+#include "dyncall_types.h"
 
 typedef int DCerror;
 
@@ -34,13 +35,15 @@ typedef int DCerror;
 extern "C" {
 #endif
 
-DCerror dcAllocWX(DCsize size, void** p);
-void    dcFreeWX (void* p, DCsize size);
+/* returns 0 on success */
+DCerror dcAllocWX   (DCsize size, void** p);
+DCerror dcInitExecWX(void* p, DCsize size);
+void    dcFreeWX    (void* p, DCsize size);
 
 #ifdef __cplusplus
 }
 #endif
 
 
-#endif // DYNCALL_ALLOC_WX_HPP
+#endif /* DYNCALL_ALLOC_WX_HPP */
 

@@ -2,11 +2,11 @@
 
  Package: dyncall
  Library: dyncall
- File: dyncall/dyncall_callvm_arm32_armhf.h
+ File: dyncall/dyncall_callvm_arm32_arm_armhf.h
  Description: 
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>, 
+   Copyright (c) 2007-2020 Daniel Adler <dadler@uni-goettingen.de>, 
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -22,6 +22,7 @@
    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 */
+
 
 
 /*
@@ -40,10 +41,8 @@
 #ifndef DYNCALL_CALLVM_ARM32_ARM_ARMHF_H
 #define DYNCALL_CALLVM_ARM32_ARM_ARMHF_H
 
-#include "dyncall_call_arm32_arm_armhf.h"
 #include "dyncall_callvm.h"
 #include "dyncall_vector.h"
-
 
 typedef struct
 {
@@ -55,9 +54,6 @@ typedef struct
   DCpointer    mpCallFunc;
   DCVecHead    mVecHead;
 } DCCallVM_arm32_armhf;
-
-DCCallVM* dcNewCallVM_arm32_armhf(DCsize size);
-
 
 #endif /* DYNCALL_CALLVM_ARM32_ARM_H */
 

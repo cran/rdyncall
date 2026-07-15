@@ -6,7 +6,7 @@
  Description: Callback - Implementation for x86
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>,
+   Copyright (c) 2007-2022 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -24,33 +24,40 @@
 */
 
 
-#include "dyncall_callback_x86.h"
+#include "dyncall_callback.h"
+#include "dyncall_alloc_wx.h"
+#include "dyncall_thunk.h"
 #include "dyncall_args_x86.h"
 
-#include "dyncall_alloc_wx.h"
-#include "dyncall_signature.h"
 
-/*
- * assembly thunk entry for callbacks
- */
-
+/* Callback symbol. */
 extern void dcCallbackThunkEntry();
+
+struct DCCallback
+{
+  DCThunk            thunk;         /* offset 0,  size 16 */
+  DCCallbackHandler* handler;       /* offset 16 */
+  DCArgsVT*          args_vt;       /* offset 20 */
+  size_t             stack_cleanup; /* offset 24 */
+  void*              userdata;      /* offset 28 */
+};
+
 
 /* compute stacksize for callee cleanup calling conventions:
  *
- * stdcall,fastcall_ms,fastcall_gnu
+ * cdecl,stdcall,thiscall_ms,fastcall_ms,fastcall_gnu
  */
 
-static int dcbCleanupSize_x86_cdecl(const char* signature)
+static int dcbCleanupSize_x86_cdecl(const DCsigchar* signature)
 {
   return 0;
 }
 
-static int dcbCleanupSize_x86_std(const char* signature)
+static int dcbCleanupSize_x86_std(const DCsigchar* signature)
 {
-  const char* ptr = signature;
+  const DCsigchar* ptr = signature;
   int size = 0;
-  char ch;
+  DCsigchar ch;
   while( (ch = *ptr++) != DC_SIGCHAR_ENDARG ) {
     switch(ch) {
       case DC_SIGCHAR_BOOL:
@@ -77,11 +84,11 @@ static int dcbCleanupSize_x86_std(const char* signature)
   return size;
 }
 
-static int dcbCleanupSize_x86_this_ms(const char* signature)
+static int dcbCleanupSize_x86_this_ms(const DCsigchar* signature)
 {
-  const char* ptr = signature;
+  const DCsigchar* ptr = signature;
   int size = 0;
-  char ch;
+  DCsigchar ch;
   while( (ch = *ptr++) != DC_SIGCHAR_ENDARG )
   {
     switch(ch)
@@ -110,12 +117,12 @@ static int dcbCleanupSize_x86_this_ms(const char* signature)
   return size;
 }
 
-static int dcbCleanupSize_x86_fast_ms(const char* signature)
+static int dcbCleanupSize_x86_fast_ms(const DCsigchar* signature)
 {
-  const char* ptr = signature;
+  const DCsigchar* ptr = signature;
   int size = 0;
   int regs = 0;
-  char ch;
+  DCsigchar ch;
   while( (ch = *ptr++) != DC_SIGCHAR_ENDARG )
   {
     switch(ch)
@@ -149,10 +156,10 @@ static int dcbCleanupSize_x86_fast_ms(const char* signature)
   return size;
 }
 
-static int dcbCleanupSize_x86_fast_gnu(const char* signature)
+static int dcbCleanupSize_x86_fast_gnu(const DCsigchar* signature)
 {
-  const char* ptr = signature;
-  char ch;
+  const DCsigchar* ptr = signature;
+  DCsigchar ch;
   int size = 0;
   int regs = 0;
   while( (ch = *ptr++) != DC_SIGCHAR_ENDARG ) {
@@ -177,31 +184,24 @@ static int dcbCleanupSize_x86_fast_gnu(const char* signature)
   return size;
 }
 
-void dcbInitCallback(DCCallback* pcb, const char* signature, DCCallbackHandler* handler, void* userdata)
+
+void dcbInitCallback2(DCCallback* pcb, const DCsigchar* signature, DCCallbackHandler* handler, void* userdata, DCaggr *const * aggrs)
 {
-  const char* ptr;
-  char  ch;
+  const DCsigchar* ptr;
   int mode;
   pcb->handler = handler;
   pcb->userdata = userdata;
 
   ptr = signature;
-  ch = *ptr;
 
   /* x86 hints: */
 
   mode = DC_CALL_C_X86_CDECL;
 
-  if(ch == DC_SIGCHAR_CC_PREFIX)
+  if(*ptr == DC_SIGCHAR_CC_PREFIX)
   {
-    ptr++;
-    ch = *ptr++;
-    switch(ch) {
-      case DC_SIGCHAR_CC_STDCALL:      mode = DC_CALL_C_X86_WIN32_STD;      break;
-      case DC_SIGCHAR_CC_THISCALL_MS:  mode = DC_CALL_C_X86_WIN32_THIS_MS;  break;
-      case DC_SIGCHAR_CC_FASTCALL_GNU: mode = DC_CALL_C_X86_WIN32_FAST_GNU; break;
-      case DC_SIGCHAR_CC_FASTCALL_MS:  mode = DC_CALL_C_X86_WIN32_FAST_MS;  break;
-    }
+    mode = dcGetModeFromCCSigChar(ptr[1]);
+    ptr += 2;
   }
 
   /* x86 configuration: */
@@ -215,10 +215,6 @@ void dcbInitCallback(DCCallback* pcb, const char* signature, DCCallbackHandler* 
       pcb->args_vt = &dcArgsVT_default;
       pcb->stack_cleanup = dcbCleanupSize_x86_std(ptr);
       break;
-    case DC_CALL_C_X86_WIN32_THIS_MS:
-      pcb->args_vt = &dcArgsVT_this_ms;
-      pcb->stack_cleanup = dcbCleanupSize_x86_this_ms(ptr);
-      break;
     case DC_CALL_C_X86_WIN32_FAST_MS:
       pcb->args_vt = &dcArgsVT_fast_ms;
       pcb->stack_cleanup = dcbCleanupSize_x86_fast_ms(ptr);
@@ -227,35 +223,53 @@ void dcbInitCallback(DCCallback* pcb, const char* signature, DCCallbackHandler* 
       pcb->args_vt = &dcArgsVT_fast_gnu;
       pcb->stack_cleanup = dcbCleanupSize_x86_fast_gnu(ptr);
       break;
+#if defined(DC_WINDOWS) && defined(DC__C_MSVC)
+	case DC_CALL_C_DEFAULT_THIS:
+#endif
+    case DC_CALL_C_X86_WIN32_THIS_MS:
+      pcb->args_vt = &dcArgsVT_this_ms;
+      pcb->stack_cleanup = dcbCleanupSize_x86_this_ms(ptr);
+      break;
   }
+
+#if defined(DC_PLAN9)
+  /* HACK for Plan9 - 'reuse' pcb->stack_cleanup as a flag
+     to indicate if return value is 64bit. The field is not
+     used anyways as the caller is responsible to clean up
+     the stack in Plan9. If set to '1' the callback kernel
+     takes into account an extra stack-parameter (pointer
+     to 64bit return value).
+     I thought of introducing a new field, but for one single
+     x86 calling convention out of many, it seemed overkill
+     to change the struct for everybody else. Maybe renaming
+     would be a good idea, though. ~ Tassilo
+  */
+  while(*ptr) {
+    if(*ptr++ == DC_SIGCHAR_ENDARG) {
+      pcb->stack_cleanup = (*ptr == DC_SIGCHAR_LONGLONG) || (*ptr == DC_SIGCHAR_ULONGLONG);
+      break;
+    }
+  }
+#endif
 }
 
-/*
- * callback constructor
- */
 
-DCCallback* dcbNewCallback(const char* signature, DCCallbackHandler* handler, void* userdata)
+DCCallback* dcbNewCallback2(const DCsigchar* signature, DCCallbackHandler* handler, void* userdata, DCaggr *const * aggrs)
 {
-  int err;
   DCCallback* pcb;
-  err = dcAllocWX(sizeof(DCCallback), (void**) &pcb);
-  if (err != 0) return 0;
+  int err = dcAllocWX(sizeof(DCCallback), (void**) &pcb);
+  if(err)
+    return NULL;
 
+  dcbInitCallback2(pcb, signature, handler, userdata, aggrs);
   dcbInitThunk(&pcb->thunk, dcCallbackThunkEntry);
-  dcbInitCallback(pcb, signature, handler, userdata);
+
+  err = dcInitExecWX(pcb, sizeof(DCCallback));
+  if(err) {
+    dcFreeWX(pcb, sizeof(DCCallback));
+    return NULL;
+  }
+
   return pcb;
 }
 
-/*
- * free
- */
-
-void dcbFreeCallback(DCCallback* pcb)
-{
-  dcFreeWX(pcb, sizeof(DCCallback));
-}
-
-void* dcbGetUserData(DCCallback* pcb)
-{
-  return pcb->userdata;
-}

@@ -1,31 +1,44 @@
-# Package: rdyncall 
+# Package: rdyncall
 # File: demo/stdio.R
-# Description: Direct I/O of R raw vectors using C stdio functions
+# Description: Read and write R raw vectors through C stdio.
 
-dynport(stdio)
+library(rdyncall)
 
-# test: fopen returns NULL pointer on error
+# Bind a small subset of C stdio. `p` is FILE*, `J` is size_t, and `Z` is a C
+# string for path and mode arguments.
+libc <- new.env(parent = globalenv())
+binding <- dynbind(c("msvcrt", "c", "c.so.6"), paste(
+    "fopen(ZZ)p",
+    "fwrite(pJJp)J",
+    "fread(pJJp)J",
+    "fclose(p)i",
+    sep = ";"
+), envir = libc)
+stopifnot(!length(binding$unresolved.symbols))
 
-nonexisting <- "dummyname"
-f <- fopen(nonexisting, "r")
-is.nullptr(f)
+path <- tempfile("rdyncall-stdio-")
+on.exit(unlink(path), add = TRUE)
 
-# test: R raw object read/write
+# Opening a missing file in read mode should return a NULL pointer.
+missing <- libc$fopen(path, "rb")
+print(is.nullptr(missing))
+stopifnot(is.nullptr(missing))
 
-tempfile <- "bla"
-f <- fopen(tempfile, "wb")
-writebuf <- as.raw(0:255)
-copy <- writebuf
-copy[[1]] <- as.raw(0xFF)
-fwrite(writebuf, 1, length(writebuf), f)
-fclose(f)
+# Write every byte value to disk through fwrite().
+write_buffer <- as.raw(0:255)
+file <- libc$fopen(path, "wb")
+stopifnot(!is.nullptr(file))
+written <- libc$fwrite(write_buffer, 1L, length(write_buffer), file)
+libc$fclose(file)
+stopifnot(written == length(write_buffer))
 
-f <- fopen(tempfile, "rb")
-readbuf <- raw(256)
-copybuf <- readbuf
-fread(readbuf, 1, length(readbuf), f)
-copybuf[[1]] <- as.raw(0xFF)
-fclose(f)
+# Read the file back into a preallocated R raw vector through fread().
+read_buffer <- raw(length(write_buffer))
+file <- libc$fopen(path, "rb")
+stopifnot(!is.nullptr(file))
+read <- libc$fread(read_buffer, 1L, length(read_buffer), file)
+libc$fclose(file)
 
-identical(readbuf,writebuf)
-
+print(read_buffer)
+stopifnot(read == length(read_buffer))
+stopifnot(identical(read_buffer, write_buffer))

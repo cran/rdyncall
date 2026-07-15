@@ -23,11 +23,15 @@ include_directories(${PROJECT_SOURCE_DIR}/dyncall)
 if(MSVC)
   if(CMAKE_SIZEOF_VOID_P MATCHES 4)
     set(ASM_SRC dyncall_callback_x86_masm.asm)	
+  elseif("${CMAKE_GENERATOR_PLATFORM}" MATCHES "ARM64")
+    set(ASM_SRC ${CMAKE_SOURCE_DIR}/dyncallback/dyncall_callback_arm64_masm.asm)
+    compile_asm(TARGET dyncallback_s ASM_FILES ${ASM_SRC} OUTPUT_OBJECTS ASM_SRC)
   else()
     set(ASM_SRC dyncall_callback_x64_masm.asm)
   endif()
 else()
   set(ASM_SRC dyncall_callback_arch.S)
+  set_source_files_properties(${ASM_SRC} PROPERTIES LANGUAGE "C")
 endif()
 
 add_library(dyncallback_s STATIC ${ASM_SRC}
@@ -44,8 +48,7 @@ install(FILES
   dyncall_thunk_x86.h
   dyncall_thunk_ppc32.h
   dyncall_thunk_x64.h
-  dyncall_thunk_arm32_arm.h
-  dyncall_thunk_arm32_thumb.h
+  dyncall_thunk_arm32.h
   dyncall_alloc_wx.h
   dyncall_args.h
   dyncall_callback.h

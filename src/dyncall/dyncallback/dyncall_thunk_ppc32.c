@@ -3,10 +3,10 @@
  Package: dyncall
  Library: dyncallback
  File: dyncallback/dyncall_thunk_ppc32.c
- Description: Thunk - Implementation for ppc32
+ Description: Thunk - Implementation for ppc32 darwin/apple
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>,
+   Copyright (c) 2007-2018 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -23,10 +23,11 @@
 
 */
 
+
 #include "dyncall_thunk.h"
 
-unsigned short hi16(x) { return ( (unsigned short) (((unsigned int)x)>>16UL) ); }
-unsigned short lo16(x) { return ( (unsigned short)  ((unsigned int)x)        ); }   
+static unsigned short hi16(x) { return ( (unsigned short) (((unsigned int)x)>>16UL) ); }
+static unsigned short lo16(x) { return ( (unsigned short)  ((unsigned int)x)        ); }   
 
 void dcbInitThunk(DCThunk* p, void (*entry)())
 {
@@ -41,7 +42,7 @@ void dcbInitThunk(DCThunk* p, void (*entry)())
 
   p->code_load_hi = 0x3c40U;     /* lis  r2, HI16(p) */
   p->addr_self_hi = hi16(p);
-  p->code_load_lo = 0x6042U; 	 /* ori  r2, r2, LO16(p) */
+  p->code_load_lo = 0x6042U;     /* ori  r2, r2, LO16(p) */
   p->addr_self_lo = lo16(p);
   p->code_jump[0] = 0x81820014U; /* lwz   r12, 20(r2) */
   p->code_jump[1] = 0x7d8903a6U; /* mtclr r12 */

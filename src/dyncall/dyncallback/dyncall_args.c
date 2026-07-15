@@ -6,7 +6,7 @@
  Description: Callback's Arguments VM - Implementation back-end selector
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>,
+   Copyright (c) 2007-2018 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -26,18 +26,38 @@
 #include "../dyncall/dyncall_macros.h"
 
 #if defined(DC__Arch_Intel_x86)
-#include "dyncall_args_x86.c"
-#elif defined (DC__Arch_AMD64)
-#include "dyncall_args_x64.c"
-#elif defined (DC__Arch_PowerPC)
-#include "dyncall_args_ppc32.c"
-#elif defined (DC__Arch_ARM_ARM)
-#include "dyncall_args_arm32_arm.c"
-#elif defined (DC__Arch_ARM_THUMB)
-#include "dyncall_args_arm32_thumb.c"
-#elif defined (DC__Arch_Sparc)
-#include "dyncall_args_sparc32.c"
-#elif defined (DC__Arch_Sparcv9)
-#include "dyncall_args_sparc64.c"
+#  include "dyncall_args_x86.c"
+#elif defined(DC__Arch_AMD64)
+#  include "dyncall_args_x64.c"
+#elif defined(DC__Arch_PPC32)
+#  if defined(DC__OS_Darwin)
+#    include "dyncall_args_ppc32.c"
+#  else
+#    include "dyncall_args_ppc32_sysv.c"
+#  endif
+#elif defined(DC__Arch_PPC64)
+#  include "dyncall_args_ppc64.c"
+#elif defined(DC__Arch_ARM)
+#  include "dyncall_args_arm32.c"
+#elif defined(DC__Arch_MIPS)
+#  if defined(DC__ABI_MIPS_O32)
+#    include "dyncall_args_mips_o32.c"
+#  else
+#    include "dyncall_args_mips.c"
+#  endif
+#elif defined(DC__Arch_MIPS64)
+#    include "dyncall_args_mips64.c"
+#elif defined(DC__Arch_Sparc)
+#  include "dyncall_args_sparc32.c"
+#elif defined(DC__Arch_Sparc64)
+#  include "dyncall_args_sparc64.c"
+#elif defined(DC__Arch_ARM64)
+#  if defined(DC__OS_Darwin)
+#    include "dyncall_args_arm64_apple.c"
+#  else
+#    include "dyncall_args_arm64.c"
+#  endif
+#elif defined(DC__Arch_RiscV64)
+#  include "dyncall_args_riscv64.c"
 #endif
 

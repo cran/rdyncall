@@ -28,17 +28,17 @@
 .code 32	/* ARM mode */
 
 .globl _dcCallbackThunkEntry
-
+.align 4
 /* sizes */
-.set DCThunk_size   ,   8
-.set DCArgs_size    ,  24
-.set DCValue_size   ,   8
+DCThunk_size    =   8
+DCArgs_size     =  24
+DCCallback_size =  20
+DCValue_size    =   8
 
 /* struct DCCallback offsets and size */
-.set CTX_thunk      ,   0
-.set CTX_handler    ,  12
-.set CTX_userdata   ,  16
-.set DCCallback_size,  20
+CTX_thunk       =   0
+CTX_handler     =  12
+CTX_userdata    =  16
 
 
 /* Called by thunk - thunk stores pointer to DCCallback in r12 */

@@ -6,7 +6,7 @@
  Description: 
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>, 
+   Copyright (c) 2007-2018 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
                            Olivier Chafik <olivier.chafik@gmail.com>
 
@@ -25,16 +25,11 @@
 */
 
 
+
 #include "dynload.h"
 #include "dynload_alloc.h"
 
 #include <windows.h>
-
-struct DLLib_
-{
-  IMAGE_DOS_HEADER dos_header;
-};
-
 
 struct DLSyms_
 {
@@ -49,14 +44,37 @@ struct DLSyms_
 
 DLSyms* dlSymsInit(const char* libPath)
 {
-  DLLib* pLib = dlLoadLibrary(libPath);
-  DLSyms* pSyms = (DLSyms*)dlAllocMem(sizeof(DLSyms));
-  const char* base = (const char*) pLib;
-  IMAGE_DOS_HEADER*       pDOSHeader      = (IMAGE_DOS_HEADER*) base;  
-  IMAGE_NT_HEADERS*       pNTHeader       = (IMAGE_NT_HEADERS*) ( base + pDOSHeader->e_lfanew );  
-  IMAGE_DATA_DIRECTORY*   pExportsDataDir = &pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
-  IMAGE_EXPORT_DIRECTORY* pExports        = (IMAGE_EXPORT_DIRECTORY*) (base + pExportsDataDir->VirtualAddress);  
+  DLLib*                  pLib;
+  DLSyms*                 pSyms;
+  IMAGE_DOS_HEADER*       pDOSHeader;
+  IMAGE_NT_HEADERS*       pNTHeader;
+  IMAGE_DATA_DIRECTORY*   pExportsDataDir;
+  IMAGE_EXPORT_DIRECTORY* pExports;
+  const char*             base;
 
+  pLib = dlLoadLibrary(libPath);
+  if(!pLib)
+    return NULL;
+
+  base            = (const char*)pLib;
+  pDOSHeader      = (IMAGE_DOS_HEADER*)base;
+  pNTHeader       = (IMAGE_NT_HEADERS*)(base + pDOSHeader->e_lfanew);
+
+  /* optional header present and big enough? this header should exist as it's only optional for object files */
+  if(pNTHeader->FileHeader.SizeOfOptionalHeader < ((char*)&pNTHeader->OptionalHeader.DataDirectory - (char*)&pNTHeader->OptionalHeader))
+      return NULL;
+
+  /* export table available? */
+  if(pNTHeader->OptionalHeader.NumberOfRvaAndSizes <= IMAGE_DIRECTORY_ENTRY_EXPORT)
+      return NULL;
+
+  pExportsDataDir = &pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+  if(!pExportsDataDir->VirtualAddress)
+    return NULL;
+
+  pExports        = (IMAGE_EXPORT_DIRECTORY*)(base + pExportsDataDir->VirtualAddress);
+
+  pSyms         = (DLSyms*)dlAllocMem(sizeof(DLSyms));
   pSyms->pBase  = base;
   pSyms->pNames = (DWORD*)(base + pExports->AddressOfNames);
   pSyms->pFuncs = (DWORD*)(base + pExports->AddressOfFunctions);
@@ -70,38 +88,37 @@ DLSyms* dlSymsInit(const char* libPath)
 
 void dlSymsCleanup(DLSyms* pSyms)
 {
-  dlFreeLibrary(pSyms->pLib);
-  dlFreeMem(pSyms);
+  if(pSyms) {
+    dlFreeLibrary(pSyms->pLib);
+    dlFreeMem(pSyms);
+  }
 }
 
 
 int dlSymsCount(DLSyms* pSyms)
 {
-  return (int)pSyms->count;
+    return pSyms ? (int)pSyms->count : 0;
 }
 
 
 const char* dlSymsName(DLSyms* pSyms, int index)
 {
-  return (const char*)((const char*)pSyms->pBase + pSyms->pNames[index]);
+  if(!pSyms || index < 0 || index >= pSyms->count)
+    return NULL;
+  return pSyms->pBase + pSyms->pNames[index];
 }
 
 
-void* dlSymsValue(DLSyms* pSyms, int index)
-{
-  return (void*)(pSyms->pBase + pSyms->pFuncs[pSyms->pOrds[index]]);
-}
-
-
-const char* dlSymsNameFromValue(DLSyms* pSyms, void* value) 
+const char* dlSymsNameFromValue(DLSyms* pSyms, void* value)
 {
   int i, c=dlSymsCount(pSyms);
   for(i=0; i<c; ++i)
   {
-    if(dlSymsValue(pSyms, i) == value)
+    if((void*)(pSyms->pBase + pSyms->pFuncs[pSyms->pOrds[i]]) == value)
       return dlSymsName(pSyms, i);
   }
 
   /* Not found. */
   return NULL;
 }
+

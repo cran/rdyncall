@@ -6,7 +6,7 @@
  Description: mips "n64" ABI callvm implementation
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>, 
+   Copyright (c) 2007-2020 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -22,6 +22,7 @@
    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 */
+
 
 
 /*
@@ -52,21 +53,18 @@
 #include "dyncall_alloc.h"
 #include "dyncall_utils.h"
 
+
+void dcCall_mips_n64(DCpointer target, DCRegData_mips_n64* regdata, DCsize stksize, DCpointer stkdata);
+
+
 static void dc_callvm_reset_mips_n64(DCCallVM* in_self)
 {
   DCCallVM_mips_n64* self = (DCCallVM_mips_n64*)in_self;
   dcVecReset(&self->mVecHead);
   self->mRegCount = 0;
+#if defined(DC__ABI_HARDFLOAT)
   self->mRegData.mUseDouble = 0LL;
-}
-
-static DCCallVM* dc_callvm_new_mips_n64(DCCallVM_vt* vt, DCsize size)
-{
-  DCCallVM_mips_n64* self = (DCCallVM_mips_n64*)dcAllocMem(sizeof(DCCallVM_mips_n64)+size);
-  dc_callvm_base_init(&self->mInterface, vt);
-  dcVecInit(&self->mVecHead, size);
-  dc_callvm_reset_mips_n64( (DCCallVM*) self );
-  return (DCCallVM*)self;
+#endif /* DC__ABI_HARDFLOAT */
 }
 
 
@@ -83,24 +81,24 @@ static void dc_callvm_free_mips_n64(DCCallVM* in_self)
 
 /* arg int -- fillup 64-bit integer register file OR push on stack */
 
-static void dc_callvm_argLongLong_mips_n64(DCCallVM* in_self, DClonglong Lv)
+static void dc_callvm_argLongLong_mips_n64(DCCallVM* in_self, DClonglong x)
 {
   DCCallVM_mips_n64* self = (DCCallVM_mips_n64*)in_self;
   /* fillup integer register file */
   if (self->mRegCount < 8)
-    self->mRegData.mIntData[self->mRegCount++] = Lv;
+    self->mRegData.mIntData[self->mRegCount++] = x;
   else
-    dcVecAppend(&self->mVecHead, &Lv, sizeof(DClonglong));
+    dcVecAppend(&self->mVecHead, &x, sizeof(DClonglong));
 }
 
-static void dc_callvm_argInt_mips_n64(DCCallVM* in_self, DCint i)
+static void dc_callvm_argInt_mips_n64(DCCallVM* in_self, DCint x)
 {
-  dc_callvm_argLongLong_mips_n64(in_self, (DClonglong) i );
+  dc_callvm_argLongLong_mips_n64(in_self, (DClonglong)x);
 }
 
 static void dc_callvm_argPointer_mips_n64(DCCallVM* in_self, DCpointer x)
 {
-  dc_callvm_argLongLong_mips_n64(in_self, * (DClonglong*) &x );
+  dc_callvm_argLongLong_mips_n64(in_self, *(DClonglong*)&x);
 }
 
 static void dc_callvm_argBool_mips_n64(DCCallVM* in_self, DCbool x)
@@ -125,29 +123,45 @@ static void dc_callvm_argLong_mips_n64(DCCallVM* in_self, DClong x)
 
 static void dc_callvm_argDouble_mips_n64(DCCallVM* in_self, DCdouble x)
 {
+#if defined(DC__ABI_HARDFLOAT)
   DCCallVM_mips_n64* self = (DCCallVM_mips_n64*)in_self;
   if (self->mRegCount < 8) {
     self->mRegData.mUseDouble |= 1<<( self->mRegCount );
     self->mRegData.mFloatData[self->mRegCount++].d = x;
   } else {
-    dcVecAppend(&self->mVecHead, &x, sizeof(DCdouble) );
+    dcVecAppend(&self->mVecHead, &x, sizeof(DCdouble));
   }
+#else
+  dc_callvm_argLongLong_mips_n64(in_self, *(DClonglong*)&x);
+#endif /* DC__ABI_HARDFLOAT */
 }
 
 static void dc_callvm_argFloat_mips_n64(DCCallVM* in_self, DCfloat x)
 {
+#if defined(DC__ABI_HARDFLOAT)
   DCCallVM_mips_n64* self = (DCCallVM_mips_n64*)in_self;
   if (self->mRegCount < 8) {
     /*self->mRegData.mFloatData[self->mRegCount++].d = (DCdouble) x;*/
     self->mRegData.mFloatData[self->mRegCount++].f = x;
   } else {
-    dcVecAppend(&self->mVecHead, &x, sizeof(DCfloat) );
-    dcVecSkip(&self->mVecHead, sizeof(DCfloat) );
+    dcVecAppend(&self->mVecHead, &x, sizeof(DCfloat));
+    dcVecSkip(&self->mVecHead, sizeof(DCfloat));
   }
+#else
+  DCfloat f[] = {x,0.f};
+# if defined(DC__Endian_BIG)
+  /* floats in regs always right justified */
+  if (((DCCallVM_mips_n64*)in_self)->mRegCount < 8) {
+    f[1] = f[0];
+    f[0] = 0.f;
+  }
+# endif /* DC__Endian_BIG */
+  dc_callvm_argLongLong_mips_n64(in_self, *(DClonglong*)&f);
+#endif /* DC__ABI_HARDFLOAT */
 }
 
 
-/* Ellipsis calls: 
+/* Ellipsis calls:
    - float is promoted to double (due to ANSI C).
    - double is passed via integer register-file (due to MIPS ABI).
 */
@@ -169,14 +183,13 @@ void dc_callvm_call_mips_n64(DCCallVM* in_self, DCpointer target)
 {
   DCCallVM_mips_n64* self = (DCCallVM_mips_n64*)in_self;
   /* at minimum provide 16-bytes
-     which hold the first four integer register as spill area 
+     which hold the first four integer register as spill area
      and are automatically loaded to $4-$7
    */
   size_t size = DC_MAX(16, ( ( (unsigned) dcVecSize(&self->mVecHead) ) +7UL ) & (-8UL) );
   dcCall_mips_n64(target, &self->mRegData, size, dcVecData(&self->mVecHead));
 }
 
-/* Forward Declaration. */
 static void dc_callvm_mode_mips_n64(DCCallVM* in_self,DCint mode);
 
 DCCallVM_vt gVT_mips_n64 =
@@ -186,14 +199,14 @@ DCCallVM_vt gVT_mips_n64 =
 , &dc_callvm_mode_mips_n64
 , &dc_callvm_argBool_mips_n64
 , &dc_callvm_argChar_mips_n64
-, &dc_callvm_argShort_mips_n64 
+, &dc_callvm_argShort_mips_n64
 , &dc_callvm_argInt_mips_n64
 , &dc_callvm_argLong_mips_n64
 , &dc_callvm_argLongLong_mips_n64
 , &dc_callvm_argFloat_mips_n64
 , &dc_callvm_argDouble_mips_n64
 , &dc_callvm_argPointer_mips_n64
-, NULL /* argStruct */
+, NULL /* argAggr */
 , (DCvoidvmfunc*)       &dc_callvm_call_mips_n64
 , (DCboolvmfunc*)       &dc_callvm_call_mips_n64
 , (DCcharvmfunc*)       &dc_callvm_call_mips_n64
@@ -204,7 +217,8 @@ DCCallVM_vt gVT_mips_n64 =
 , (DCfloatvmfunc*)      &dc_callvm_call_mips_n64
 , (DCdoublevmfunc*)     &dc_callvm_call_mips_n64
 , (DCpointervmfunc*)    &dc_callvm_call_mips_n64
-, NULL /* callStruct */
+, NULL /* callAggr */
+, NULL /* beginAggr */
 };
 
 DCCallVM_vt gVT_mips_n64_ellipsis =
@@ -221,7 +235,7 @@ DCCallVM_vt gVT_mips_n64_ellipsis =
 , &dc_callvm_argFloat_mips_n64_ellipsis
 , &dc_callvm_argDouble_mips_n64_ellipsis
 , &dc_callvm_argPointer_mips_n64
-, NULL /* argStruct */
+, NULL /* argAggr */
 , (DCvoidvmfunc*)       &dc_callvm_call_mips_n64
 , (DCboolvmfunc*)       &dc_callvm_call_mips_n64
 , (DCcharvmfunc*)       &dc_callvm_call_mips_n64
@@ -232,37 +246,42 @@ DCCallVM_vt gVT_mips_n64_ellipsis =
 , (DCfloatvmfunc*)      &dc_callvm_call_mips_n64
 , (DCdoublevmfunc*)     &dc_callvm_call_mips_n64
 , (DCpointervmfunc*)    &dc_callvm_call_mips_n64
-, NULL /* callStruct */
+, NULL /* callAggr */
+, NULL /* beginAggr */
 };
 
-static void dc_callvm_mode_mips_n64(DCCallVM* self,DCint mode)
+static void dc_callvm_mode_mips_n64(DCCallVM* in_self, DCint mode)
 {
+  DCCallVM_mips_n64* self = (DCCallVM_mips_n64*)in_self;
+  DCCallVM_vt* vt;
+
   switch(mode) {
     case DC_CALL_C_DEFAULT:
-      self->mVTpointer = &gVT_mips_n64;
-      break;
+    case DC_CALL_C_DEFAULT_THIS:
+    case DC_CALL_C_MIPS64_N64:
     case DC_CALL_C_ELLIPSIS:
-      self->mVTpointer = &gVT_mips_n64_ellipsis;
+      vt = &gVT_mips_n64;
+      break;
+    case DC_CALL_C_ELLIPSIS_VARARGS:
+      vt = &gVT_mips_n64_ellipsis;
       break;
     default:
-      self->mError = DC_ERROR_UNSUPPORTED_MODE;
-      break;
+      self->mInterface.mError = DC_ERROR_UNSUPPORTED_MODE;
+      return;
   }
+  dc_callvm_base_init(&self->mInterface, vt);
 }
 
-DCCallVM* dcNewCallVM_mips_n64(DCsize size) 
-{
-  return dc_callvm_new_mips_n64(&gVT_mips_n64, size);
-}
-
-DCCallVM* dcNewCallVM_mips_n64_ellipsis(DCsize size) 
-{
-  return dc_callvm_new_mips_n64(&gVT_mips_n64_ellipsis, size);
-}
-
-
+/* Public API. */
 DCCallVM* dcNewCallVM(DCsize size)
 {
-  return dcNewCallVM_mips_n64(size);
+  DCCallVM_mips_n64* p = (DCCallVM_mips_n64*)dcAllocMem(sizeof(DCCallVM_mips_n64)+size);
+
+  dc_callvm_mode_mips_n64((DCCallVM*)p, DC_CALL_C_DEFAULT);
+
+  dcVecInit(&p->mVecHead, size);
+  dc_callvm_reset_mips_n64((DCCallVM*)p);
+
+  return (DCCallVM*)p;
 }
 

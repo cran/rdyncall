@@ -6,7 +6,7 @@
  Description: Allocate write/executable memory - Fallback implementation based
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>,
+   Copyright (c) 2007-2018 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -23,14 +23,20 @@
 
 */
 
+
 #include "dyncall_alloc_wx.h"
 
 #include <stdlib.h>
 
 
-int dcAllocWX(size_t size, void** pp)
+DCerror dcAllocWX(size_t size, void** pp)
 {
   *pp = malloc(size);
+  return 0;
+}
+
+DCerror dcInitExecWX(void* p, size_t size)
+{
   return 0;
 }
 
@@ -38,3 +44,4 @@ void dcFreeWX(void* p, size_t size)
 {
   free(p);
 }
+

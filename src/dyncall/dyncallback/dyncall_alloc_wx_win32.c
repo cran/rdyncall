@@ -6,7 +6,7 @@
  Description: Allocate write/executable memory  - Implementation for win32 platform
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>,
+   Copyright (c) 2007-2018 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -23,15 +23,21 @@
 
 */
 
+
 #include "dyncall_alloc_wx.h"
 #include <windows.h>
 #include <assert.h>
 
-int dcAllocWX(size_t size, void** ptr)
+DCerror dcAllocWX(size_t size, void** ptr)
 {
   LPVOID p = VirtualAlloc(0, size, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
   if (p == NULL) return -1;
   *ptr = p;
+  return 0;
+}
+
+DCerror dcInitExecWX(void* p, size_t size)
+{
   return 0;
 }
 

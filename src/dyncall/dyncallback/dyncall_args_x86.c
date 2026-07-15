@@ -6,7 +6,7 @@
  Description: Callback's Arguments VM - Implementation for x86
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>,
+   Copyright (c) 2007-2022 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -23,12 +23,10 @@
 
 */
 
+
 #include "dyncall_args_x86.h"
 
-/* ---------------------------------------------------------------------------- */
-/* C API implementation: */
 
-/* base operations */
 
 DCint      dcbArgInt     (DCArgs* p) { return p->vt->i32(p); }
 DClonglong dcbArgLongLong(DCArgs* p) { return p->vt->i64(p); }
@@ -51,8 +49,10 @@ DCushort    dcbArgUShort   (DCArgs* p) { return (DCushort)    dcbArgShort(p); }
 DCulong     dcbArgULong    (DCArgs* p) { return (DCulong)     dcbArgLong(p); }
 DCulonglong dcbArgULongLong(DCArgs* p) { return (DCulonglong) dcbArgLongLong(p); }
 
-/* ---------------------------------------------------------------------------- */
-/* virtual tables: */
+DCpointer   dcbArgAggr     (DCArgs* p, DCpointer target)                   { /* @@@AGGR not impl */ return NULL; }
+void        dcbReturnAggr  (DCArgs *args, DCValue *result, DCpointer ret)  { /* @@@AGGR not impl */ }
+
+
 
 /* cdecl calling convention */
 
@@ -119,3 +119,4 @@ static long long fast_gnu_i64(DCArgs* args)
 }
 
 DCArgsVT dcArgsVT_fast_gnu = { fast_i32, fast_gnu_i64, default_f32, default_f64 };
+

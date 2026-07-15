@@ -3,10 +3,10 @@
  Package: dyncall
  Library: dyncallback
  File: dyncallback/dyncall_callback_ppc32.c
- Description: Callback - Implementation Header for ppc32 (TODO: not implemented yet)
+ Description: Callback - Implementation Header for ppc32
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>,
+   Copyright (c) 2007-2022 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -23,38 +23,47 @@
 
 */
 
+
 #include "dyncall_callback.h"
-#include "dyncall_callback_ppc32.h"
+#include "dyncall_alloc_wx.h"
+#include "dyncall_thunk.h"
 
-void dcbInitCallback(DCCallback* pcb, const char* signature, DCCallbackHandler* handler, void* userdata)
+
+/* Callback symbol. */
+extern void dcCallbackThunkEntry();
+
+struct DCCallback
 {
-  const char* ptr;
-  char ch;
+  DCThunk            thunk;         /* offset  0 size 24 */
+  DCCallbackHandler* handler;       /* offset 24 size  4 */
+  size_t             stack_cleanup; /* offset 28 size  4 */
+  void*              userdata;      /* offset 32 size  4 */
+};                                  /*     total size 36 */                                  
 
+
+void dcbInitCallback2(DCCallback* pcb, const DCsigchar* signature, DCCallbackHandler* handler, void* userdata, DCaggr *const * aggrs)
+{
   pcb->handler  = handler;
   pcb->userdata = userdata;
 }
 
-extern void dcCallbackThunkEntry();
 
-DCCallback* dcbNewCallback(const char* signature, DCCallbackHandler* handler, void* userdata)
+DCCallback* dcbNewCallback2(const DCsigchar* signature, DCCallbackHandler* handler, void* userdata, DCaggr *const * aggrs)
 {
   DCCallback* pcb;
-  int err = dcAllocWX(sizeof(DCCallback), (void**) &pcb);
-  if (err != 0) return 0;
+  int err = dcAllocWX(sizeof(DCCallback), (void**)&pcb);
+  if(err)
+    return NULL;
 
+  dcbInitCallback2(pcb, signature, handler, userdata, aggrs);
   dcbInitThunk(&pcb->thunk, dcCallbackThunkEntry);
-  dcbInitCallback(pcb, signature, handler, userdata);
+
+  err = dcInitExecWX(pcb, sizeof(DCCallback));
+  if(err) {
+    dcFreeWX(pcb, sizeof(DCCallback));
+    return NULL;
+  }
 
   return pcb;
 }
 
-void dcbFreeCallback(DCCallback* pcb)
-{
-  dcFreeWX(pcb, sizeof(DCCallback));
-}
-
-void* dcbGetUserData(DCCallback* pcb)
-{
-  return pcb->userdata;
-}

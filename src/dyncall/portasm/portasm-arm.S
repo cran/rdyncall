@@ -6,8 +6,8 @@
  Description: 
  License:
 
-   Copyright (c) 2011 Daniel Adler <dadler@uni-goettingen.de>,
-                      Tassilo Philipp <tphilipp@potion-studios.com>
+   Copyright (c) 2011-2018 Daniel Adler <dadler@uni-goettingen.de>,
+                           Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
    purpose with or without fee is hereby granted, provided that the above
@@ -24,9 +24,10 @@
 */
 
 
+
 #define BEGIN_ASM	.text
-#include "../autovar/autovar_OS.h"
-#if defined(OS_Darwin)
+#include "../dyncall/dyncall_macros.h"
+#if defined(DC__OS_Darwin)
 #define GLOBAL_C(X) .globl _##X
 #define ENTRY_C(X) _##X:
 #else

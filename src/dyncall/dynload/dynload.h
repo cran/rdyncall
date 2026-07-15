@@ -6,7 +6,7 @@
  Description: public header for library dynload
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>, 
+   Copyright (c) 2007-2018 Daniel Adler <dadler@uni-goettingen.de>, 
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -24,6 +24,7 @@
 */
 
 
+
 #ifndef DYNLOAD_H
 #define DYNLOAD_H
 
@@ -35,17 +36,21 @@ extern "C" {
 #define DL_API
 #endif
 
-/* --- public api ---------------------------------------------------------- */
 
 /* shared library loading and explicit symbol resolving */
+/* dlLoadLibrary will search for specified lib (e.g. as leaf name, only), */
+/* following platforms' dynamic linking style, returns NULL on error */
 
 typedef struct DLLib_ DLLib;
 
-DL_API DLLib* dlLoadLibrary(const char* libpath);
-DL_API void   dlFreeLibrary(DLLib* pLib);
-DL_API void*  dlFindSymbol(DLLib* pLib, const char* pSymbolName);
+DL_API DLLib* dlLoadLibrary   (const char* libPath);
+DL_API void   dlFreeLibrary   (DLLib* pLib);
+DL_API void*  dlFindSymbol    (DLLib* pLib, const char* pSymbolName);
+DL_API int    dlGetLibraryPath(DLLib* pLib, char* sOut, int bufSize);
+
 
 /* symbol table enumeration - only for symbol lookup, not resolve */
+/* note that dlSymsInit does not search library paths */
 
 typedef struct DLSyms_ DLSyms;
 

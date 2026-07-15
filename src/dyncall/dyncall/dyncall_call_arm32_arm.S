@@ -6,7 +6,7 @@
  Description: Call Kernel for ARM 32-bit ARM Architecture
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>, 
+   Copyright (c) 2007-2018 Daniel Adler <dadler@uni-goettingen.de>, 
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -24,6 +24,7 @@
 */
 
 
+
 #include "../portasm/portasm-arm.S"
 
 /* ============================================================================
@@ -33,13 +34,12 @@
      dcCall_arm32_arm(DCpointer target, DCpointer argv, DCsize size);
 
    This Call Kernel works across multiple OS.
-   It has been tested on Nintendo DS, Linux and Darwin(iOS).
 
 */
 
 .text
 .code 32	/* ARM mode */
-
+.align 4
 GLOBAL_C(dcCall_arm32_arm)
 ENTRY_C(dcCall_arm32_arm)
 	/* Prolog. This function never needs to spill inside its prolog, so just store the permanent registers. */
@@ -71,7 +71,7 @@ pushArgs:
 	bne	pushArgs
 
 call:
-				/* 'blx %r4' workaround for ARMv4t: */
+				/* 'blx r4' workaround for ARMv4t: */
 	mov	r14, r15	/*   Branch return address(r15) -> link register (r14) -- r15 always points to address of current + 2 instructions (= Epilog code). */ 
 	bx	r4		/*   Call (ARM/THUMB), available for ARMv4t. */
 

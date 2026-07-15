@@ -6,7 +6,7 @@
  Description: Callback - Implementation back-end selector
  License:
 
-   Copyright (c) 2007-2011 Daniel Adler <dadler@uni-goettingen.de>,
+   Copyright (c) 2007-2022 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -23,21 +23,56 @@
 
 */
 
+
 #include "../dyncall/dyncall_macros.h"
+#include "../dyncall/dyncall_aggregate.h"
+
 
 #if defined(DC__Arch_Intel_x86)
 #include "dyncall_callback_x86.c"
-#elif defined (DC__Arch_AMD64)
+#elif defined(DC__Arch_AMD64)
 #include "dyncall_callback_x64.c"
-#elif defined (DC__Arch_PowerPC)
+#elif defined(DC__Arch_PPC32)
 #include "dyncall_callback_ppc32.c"
-#elif defined (DC__Arch_ARM_ARM)
-#include "dyncall_callback_arm32_arm.c"
-#elif defined (DC__Arch_ARM_THUMB)
-#include "dyncall_callback_arm32_thumb.c"
-#elif defined (DC__Arch_Sparc)
+#elif defined(DC__Arch_PPC64)
+#include "dyncall_callback_ppc64.c"
+#elif defined(DC__Arch_ARM)
+#include "dyncall_callback_arm32.c"
+#elif defined(DC__Arch_MIPS) || defined(DC__Arch_MIPS64)
+#include "dyncall_callback_mips.c"
+#elif defined(DC__Arch_Sparc)
 #include "dyncall_callback_sparc32.c"
-#elif defined (DC__Arch_Sparcv9)
+#elif defined(DC__Arch_Sparc64)
 #include "dyncall_callback_sparc64.c"
+#elif defined(DC__Arch_ARM64)
+#include "dyncall_callback_arm64.c"
+#elif defined(DC__Arch_RiscV64)
+#include "dyncall_callback_riscv64.c"
+#else
+#error unsupported platform
 #endif
+
+
+void dcbInitCallback(DCCallback* pcb, const DCsigchar* signature, DCCallbackHandler* handler, void* userdata)
+{
+  dcbInitCallback2(pcb, signature, handler, userdata, NULL);
+}
+
+
+DCCallback* dcbNewCallback(const DCsigchar* signature, DCCallbackHandler* handler, void* userdata)
+{
+  return dcbNewCallback2(signature, handler, userdata, NULL);
+}
+
+
+void dcbFreeCallback(DCCallback* pcb)
+{
+  dcFreeWX(pcb, sizeof(DCCallback));
+}
+
+
+void* dcbGetUserData(DCCallback* pcb)
+{
+  return pcb->userdata;
+}
 
