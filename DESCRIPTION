@@ -1,5 +1,5 @@
 Package: rdyncall
-Version: 0.10.0
+Version: 0.10.1
 Title: Improved Foreign Function Interface and Dynamic Bindings to C
         Libraries
 Authors@R: c(
@@ -25,11 +25,11 @@ Config/Needs/website: r-lib/asciicast
 RoxygenNote: 7.3.3
 Encoding: UTF-8
 NeedsCompilation: yes
-Packaged: 2026-07-04 09:36:46 UTC; hongyuanjia
+Packaged: 2026-07-16 13:13:36 UTC; hongyuanjia
 Author: Daniel Adler [aut, cph],
   Hongyuan Jia [aut, cre, cph],
   Tassilo Philipp [ctb, cph],
   Olivier Chafik [ctb, cph]
 Maintainer: Hongyuan Jia <hongyuanjia@cqust.edu.cn>
 Repository: CRAN
-Date/Publication: 2026-07-15 08:10:09 UTC
+Date/Publication: 2026-07-16 14:00:11 UTC
