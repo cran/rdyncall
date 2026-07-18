@@ -1,3 +1,10 @@
+# rdyncall 0.10.2
+
+- Make `dynunload()` idempotent after explicit unloads so finalizers do not
+  attempt to unload the same dynamic library handle twice (#71).
+- Restore the manual `R-hub` workflow so `valgrind` checks can start from
+  GitHub Actions (#73).
+
 # rdyncall 0.10.1
 
 - Build compiled tinytest fixtures from temporary source copies so CRAN checks

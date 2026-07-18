@@ -1,8 +1,8 @@
 3ded87801af1f01b751a48ed76c9da21 *BUGS
-0dec8c5b8e05a3e7c63684a1c3578a8d *DESCRIPTION
+a7d05835ef9a8b8c9a9d83d6b737d5c8 *DESCRIPTION
 b501c015ad1b313abfdd3f00d6ae075b *LICENSE
 cbaa2be6a54eec366663b740c77231a3 *NAMESPACE
-ee59c593e0e05c9edba92aabdbdea436 *NEWS.md
+ed89d22fd39d96af454bf89b81923369 *NEWS.md
 64d78cb09aba96537d41942bd335c091 *R/callback.R
 b4e1b36d228b2e1a9b97ac5fd912d0dc *R/dynbind.R
 34815f99ceafaabd6462a66464d0d3fb *R/dyncall.R
@@ -46,7 +46,7 @@ e24d7209ab2c2d65a12c8725dc784f45 *inst/tinytest/aggregate_by_value.c
 42500f389bf22ececd3798ac0021eb6b *inst/tinytest/test_dynbind.R
 573d3dc4dd9b28edef20afd80ad3cafa *inst/tinytest/test_dyncall.R
 b5bbd181622b02cd04717f31f0488b96 *inst/tinytest/test_dynfind.R
-c550b17d6c2996b02c03f4ee5f94c618 *inst/tinytest/test_dynload.R
+6e6cfd3341824b1cf32e1a142ee563ef *inst/tinytest/test_dynload.R
 7bba85d85ec3b4e19591bce2c5682b02 *inst/tinytest/test_dynport.R
 268fe5d83e05ac8e87dfa4f48452b134 *inst/tinytest/test_dynstruct.R
 904af3dcf15a76d83e778d6da5e28b2e *inst/tinytest/test_pack.R
@@ -387,7 +387,7 @@ ff9266c24d53a70d91a720617fdbf078 *src/dyncall/portasm/gen-masm.sh
 7d712227adc11e150a5f84f2beb69318 *src/rcallback.c
 ec1bde8383b5ce41de6873eb1301a2cb *src/rdyncall.c
 eac0392fddb8a9360cbb646bbb164fe5 *src/rdyncall_signature.h
-ecf96a5bb81fd97315eae8ffc05e2550 *src/rdynload.c
+602226426f929fa10e02e769d0b048a2 *src/rdynload.c
 86811e4ef8459f53017a18cf1b66fbcb *src/rpack.c
 26af1e4b4236661a27e2a668c42c8a21 *src/rpackage.c
 7e8b9454adf2aa6454cef8ffd9ae3ccc *src/rsignature.c
